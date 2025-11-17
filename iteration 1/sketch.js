@@ -5,30 +5,30 @@ let scale;
 let canvas = 800; // Base canvas size
 
 // Audio-related variables
-let amplitude;        // 音频振幅分析器
-let soundFile;        // 音频/视频文件对象
-let isPlaying = false;    // 是否正在播放
-let hasUploadedAudio = false; // 是否已上传音频文件
-let isVideo = false;        // 是否为视频文件
-let audioStarted = false;   // 音频上下文是否已启动
+let amplitude;
+let soundFile;
+let isPlaying = false;
+let hasUploadedAudio = false;
+let isVideo = false;
+let audioStarted = false;
 
-// 麦克风相关变量
-let mic;               // 麦克风输入对象
-let isUsingMic = false;    // 是否正在使用麦克风
-let micStarted = false;    // 麦克风是否已启动
+// Microphone-related variables
+let mic;               
+let isUsingMic = false;    
+let micStarted = false;    
 
-// Web Audio API 相关变量（用于视频音频分析）
-let audioContext;      // 音频上下文
-let analyser;          // 音频分析器
-let source;            // 音频源
+// Web Audio API relevant variables(For video and audio analysis)
+let audioContext;
+let analyser;
+let source;
 
-// 根据当前窗口大小调整画笔粗细和缩放比例
+// Adjust brush thickness and scaling ratio according to the current window size
 function adjustStrokeAndScale() {
 
   baseSize = min(windowWidth, windowHeight);
-  // 计算相对于基础画布大小的缩放比例
+  // Calculate the scaling ratio relative to the base canvas size
   scale = baseSize / canvas;
-  // 美观线条图案的基础画笔粗细
+  // Foundational brush thickness for aesthetically pleasing line patterns
   strokeOption = [0.4, 0.8, 1, 2, 3.5];
 
   for (let i = 0; i < strokeOption.length; i++) {
@@ -36,14 +36,14 @@ function adjustStrokeAndScale() {
   }
 }
 
-// 绘制一组30度倾斜的平行线，位置随机
-// 音频响应：参数根据声音振幅变化
+// Draw a set of parallel lines inclined at 30 degrees, positioned at random
+// Audio response: Parameters vary according to sound amplitude
 function drawLineGroup() {
-  // 获取当前音频电平（0到1）
+  // Retrieve the current audio level (0 to 1)
   let level = amplitude ? amplitude.getLevel() : 0;
 
-  // 将音频电平映射到视觉参数
-  // 音量越大 = 线条越多、线条越长、间距越密
+  // Mapping audio levels to visual parameters
+  // The greater the volume = the more lines, the longer the lines, the denser the spacing
   let minLines = map(level, 0, 1, 5, 15);
   let maxLines = map(level, 0, 1, 15, 50);
   let minLength = map(level, 0, 1, 50, 150) * scale;
@@ -51,33 +51,33 @@ function drawLineGroup() {
   let minSpacing = map(level, 0, 1, 2, 6);
   let maxSpacing = map(level, 0, 1, 6, 12);
 
-  // 随机选择起始点（x1, y1）
-  // 原点在画布中心
+  // Randomly select the starting point (x1, y1)
+  // The origin is at the centre of the canvas.
   const x1 = random(-width / 2, width / 2);
   const y1 = random(-height / 2, height / 2);
-  // 确定水平和垂直方向偏移
-  // 使用三元运算符
+  // Determine horizontal and vertical offsets
+  // Using the ternary operator
   const signX = random() > 0.5 ? 1 : -1;
   const signY = random() > 0.5 ? 1 : -1;
-  // 使用音频映射的线条长度
+  // Line length using audio mapping
   const lineLength = random(minLength, maxLength);
-  // 30度倾斜
+  // 30-degree incline
   const angle = tan(30);
-  // 水平和垂直偏移
+  // Horizontal and vertical offset
   const hShift = lineLength * signX;
   const vShift = lineLength * angle * signY;
-  // 线条终点（x2, y2）
+  //  End of the line（x2, y2）
   const x2 = x1 + hShift;
   const y2 = y1 + vShift;
-  // 使用音频映射的线条数量和间距
+  // Number of lines and spacing when using audio mapping
   const numLines = floor(random(minLines, maxLines));
   const spacing = random(minSpacing, maxSpacing);
 
-  // 绘制每条线，带有垂直偏移
+  // Draw each line with a vertical offset
   for (let i = 0; i < numLines; i++) {
-    const offset = i * spacing; // 组内每条线的相对偏移
-    strokeWeight(random(strokeOption)); // 每条线的画笔粗细
-    // 当前线的y坐标
+    const offset = i * spacing;
+    strokeWeight(random(strokeOption));
+    // The y-coordinate of the current line
     let Y1 = y1 + offset;
     let Y2 = y2 + offset;
 
@@ -91,20 +91,20 @@ function setup() {
 
   adjustStrokeAndScale();
 
-  // 初始化音频
+  // Initialise audio
   amplitude = new p5.Amplitude();
-  amplitude.smooth(0.8); // 平滑振幅读数
+  amplitude.smooth(0.8); // Smooth amplitude readings
 
-  // 以振荡器作为后备
+  // Using an oscillator as a backup
   soundFile = new p5.Oscillator();
   soundFile.amp(0);
   soundFile.start();
 
-  // 设置文件上传处理器
+  // Configure the file upload handler
   setupFileUpload();
 
   background(247, 241, 219);
-  // 将原点移动到画布中心
+  // Move the origin to the centre of the canvas
   translate(width / 2, height / 2);
 }
 
@@ -117,14 +117,14 @@ function setupFileUpload() {
   fileInput.addEventListener('change', function(e) {
     let file = e.target.files[0];
     if (file) {
-      // 检查文件大小（对大视频文件发出警告）
+      // Check file size (issue warnings for large video files)
       let fileSizeMB = file.size / (1024 * 1024);
       if (fileSizeMB > 100) {
         fileNameDiv.textContent = '警告: 文件较大 (' + fileSizeMB.toFixed(1) + 'MB)，加载可能需要时间';
         fileNameDiv.style.color = 'orange';
       }
 
-      // 确定文件类型
+      // Determine the file type
       let fileExtension = file.name.split('.').pop().toLowerCase();
       let audioExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'];
       let videoExtensions = ['mp4', 'avi', 'mov', 'mkv', 'webm'];
@@ -138,17 +138,17 @@ function setupFileUpload() {
       fileNameDiv.textContent = '正在加载: ' + file.name;
       fileNameDiv.style.color = '#333';
 
-      // 停止当前的声音/视频
+      // Stop the current audio/video
       if (soundFile) {
         soundFile.stop();
       }
 
-      // 为上传的文件创建URL
+      // Generate a URL for the uploaded file
       let fileURL = URL.createObjectURL(file);
 
-      // 根据文件类型加载
+      // Load according to file type
       if (videoExtensions.includes(fileExtension)) {
-        // 作为视频加载
+        // Loading as video
         soundFile = createVideo(fileURL, function() {
           console.log('视频文件加载成功!');
           fileNameDiv.textContent = '已加载: ' + file.name + ' (视频) ✓';
@@ -156,13 +156,13 @@ function setupFileUpload() {
           hasUploadedAudio = true;
           isVideo = true;
 
-          // 隐藏视频元素
+          // Hide video elements
           soundFile.hide();
 
-          // 设置音量但暂不播放
+          // Set the volume but do not play for the time being
           soundFile.volume(1.0);
 
-          // 隐藏启动音频按钮
+          // Hide the audio playback button
           startAudioBtn.style.display = 'none';
           playPauseBtn.style.display = 'block';
           playPauseBtn.disabled = false;
@@ -171,7 +171,7 @@ function setupFileUpload() {
           playPauseBtn.style.cursor = 'pointer';
           fileNameDiv.textContent += ' - 请点击"启动音频权限"';
 
-          // 为视频音频分析初始化 Web Audio API
+          // Initialise the Web Audio API for video and audio analysis
           audioContext = getAudioContext();
           analyser = audioContext.createAnalyser();
           source = audioContext.createMediaElementSource(soundFile.elt);
@@ -185,7 +185,7 @@ function setupFileUpload() {
           resetToFallback();
         });
       } else {
-        // 作为音频加载
+        // As audio loading
         soundFile = loadSound(fileURL, function() {
           console.log('音频文件加载成功!');
           fileNameDiv.textContent = '已加载: ' + file.name + ' (音频) ✓';
@@ -193,7 +193,7 @@ function setupFileUpload() {
           hasUploadedAudio = true;
           isVideo = false;
 
-          // 隐藏启动音频按钮
+          // Hide the audio playback button
           startAudioBtn.style.display = 'none';
           playPauseBtn.style.display = 'block';
           playPauseBtn.disabled = false;
@@ -213,24 +213,24 @@ function setupFileUpload() {
   });
 }
 
-// 用户启动音频上下文（浏览器要求）
+// User initiates audio context (browser requirement)
 function userStartAudio() {
   console.log('userStartAudio called, current state:', getAudioContext().state);
 
-  // 如果音频上下文未运行，则恢复
+  // If the audio context is not running, restore it.
   if (getAudioContext().state !== 'running') {
     getAudioContext().resume().then(() => {
       console.log('音频上下文已启动');
       audioStarted = true;
 
-      // 重要：音频上下文恢复后重新连接振幅分析器
-      // 仅适用于音频文件，不适用于视频（视频使用 Web Audio API 分析器）
+      // Important: Reconnect the amplitude analyser after audio context restoration.
+      // Applies only to audio files; not applicable to video (video uses the Web Audio API analyser)
       if (soundFile && amplitude && !isVideo) {
         amplitude.setInput(soundFile);
         console.log('音频分析器已重新连接到音频文件');
       }
 
-      // 调试：检查视频是否有音频轨道
+      // Debugging: Check whether the video contains an audio track
       if (isVideo && soundFile.elt) {
         console.log('视频音频轨道数量:', soundFile.elt.audioTracks ? soundFile.elt.audioTracks.length : '无法检测');
       }
@@ -247,10 +247,10 @@ function userStartAudio() {
     }
   }
 
-  // 始终隐藏启动音频按钮并更新显示
+  // Always hide the audio playback button and update the display
   document.getElementById('startAudio').style.display = 'none';
 
-  // 更新文件名显示
+  // Update filename display
   let fileNameDiv = document.getElementById('fileName');
   if (fileNameDiv.textContent.includes('请点击')) {
     fileNameDiv.textContent = fileNameDiv.textContent.replace(' - 请点击"启动音频权限"', ' - 音频已启动 ✓');
@@ -258,7 +258,7 @@ function userStartAudio() {
 }
 
 function resetToFallback() {
-  // 回退到振荡器
+  // Revert to oscillator
   soundFile = new p5.Oscillator();
   soundFile.amp(0);
   soundFile.start();
@@ -266,7 +266,7 @@ function resetToFallback() {
   isVideo = false;
 }
 
-// 切换麦克风输入
+// Switch microphone input
 function toggleMicrophone() {
   let micBtn = document.getElementById('micBtn');
   let fileNameDiv = document.getElementById('fileName');
@@ -274,10 +274,10 @@ function toggleMicrophone() {
   let startAudioBtn = document.getElementById('startAudio');
 
   if (!isUsingMic) {
-    // 启动麦克风
+    // Activate microphone
     startMicrophone();
   } else {
-    // 停止麦克风并切换回文件模式
+    // Disable the microphone and switch back to file mode
     stopMicrophone();
   }
 }
@@ -288,7 +288,7 @@ function startMicrophone() {
   let playPauseBtn = document.getElementById('playPauseBtn');
   let startAudioBtn = document.getElementById('startAudio');
 
-  // 首先停止任何正在播放的音频/视频
+  // First stop any audio or video currently playing
   if (soundFile && isPlaying) {
     if (isVideo) {
       soundFile.pause();
@@ -298,10 +298,10 @@ function startMicrophone() {
     isPlaying = false;
   }
 
-  // 隐藏文件模式的播放/暂停按钮
+  // Hidden file mode play/pause button
   playPauseBtn.style.display = 'none';
 
-  // 如果需要，启动音频上下文
+  //  If required, initialise the audio context
   if (getAudioContext().state !== 'running') {
     getAudioContext().resume().then(() => {
       console.log('音频上下文已启动（麦克风模式）');
@@ -322,23 +322,23 @@ function initializeMicrophone() {
   let micBtn = document.getElementById('micBtn');
   let fileNameDiv = document.getElementById('fileName');
 
-  // 创建并启动麦克风
+  // Create and activate the microphone
   mic = new p5.AudioIn();
   mic.start(() => {
     console.log('麦克风已启动');
     micStarted = true;
     isUsingMic = true;
     
-    // 将麦克风连接到振幅分析器
+    // Connect the microphone to the amplitude analyser
     amplitude.setInput(mic);
     
-    // 更新UI
+    // Update the UI
     micBtn.textContent = '🔴 停止麦克风';
     micBtn.style.background = '#F44336';
     fileNameDiv.textContent = '麦克风已启动 - 正在监听声音...';
     fileNameDiv.style.color = 'green';
     
-    // 开始播放可视化
+    // Start playing the visualisation
     isPlaying = true;
     
   }, (error) => {
@@ -361,27 +361,27 @@ function stopMicrophone() {
   isUsingMic = false;
   isPlaying = false;
 
-  // 重置振幅输入
+  // Reset amplitude input
   if (soundFile && !isVideo) {
     amplitude.setInput(soundFile);
   }
 
-  // 更新UI
+  // Update UI
   micBtn.textContent = '🎤 使用麦克风';
   micBtn.style.background = '#FF9800';
   fileNameDiv.textContent = '麦克风已停止';
 
-  // 如果有文件加载，显示播放/暂停按钮
+  // If a file is loaded, display the play/pause button
   if (hasUploadedAudio) {
     playPauseBtn.style.display = 'block';
     fileNameDiv.textContent = '已切换到文件模式';
   }
 }
-// 使用按钮切换播放/暂停
+// Use the button to toggle play/pause
 function togglePlayPause() {
   let playPauseBtn = document.getElementById('playPauseBtn');
 
-  // 如果没有上传文件，按钮会被禁用，所以这种情况不应该发生
+  // If no file has been uploaded, the button will be disabled; therefore, this situation should not occur
   if (!soundFile || !hasUploadedAudio) {
     return;
   }
@@ -389,7 +389,7 @@ function togglePlayPause() {
   userStartAudio();
 
   if (isPlaying) {
-    // 暂停
+    // pause
     if (isVideo) {
       soundFile.pause();
       console.log('Video paused');
@@ -403,7 +403,7 @@ function togglePlayPause() {
   } else {
     // 播放
     if (isVideo) {
-      soundFile.loop(); // 播放时设置为循环
+      soundFile.loop(); // Set to loop during playback
       soundFile.play();
       console.log('Video playing, time:', soundFile.time());
       soundFile.volume(1.0);
@@ -418,39 +418,39 @@ function togglePlayPause() {
 }
 
 function draw() {
-  background(247, 241, 219, 25); // 轻微透明度以产生轨迹效果
-  // 将原点移动到画布中心
+  background(247, 241, 219, 25); // Slight transparency to produce a trail effect
+  // Move the origin to the centre of the canvas
   translate(width / 2, height / 2);
 
-  // 根据音频电平绘制线条组
+  // Draw line groups based on audio levels
   let level;
 
-  // 视频使用 Web Audio API，音频文件和麦克风使用 p5.Amplitude
+  // video uses Web Audio API，audio and microphone use p5.Amplitude
   if (isVideo && analyser && !isUsingMic) {
-    // 从 Web Audio API 分析器获取音频电平
+    // Retrieving audio levels from the Web Audio API analyser
     let dataArray = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(dataArray);
 
-    // 从频率数据计算平均电平
+    // Calculate the average level from frequency data
     let sum = 0;
     for (let i = 0; i < dataArray.length; i++) {
       sum += dataArray[i];
     }
-    level = sum / dataArray.length / 255; // 归一化到 0-1
+    level = sum / dataArray.length / 255; // Normalised to 0-1
   } else {
-    // 音频文件和麦克风使用 p5.Amplitude
+    // Audio files and microphone usage with p5.Amplitude
     level = amplitude ? amplitude.getLevel() : 0;
   }
 
-  // 调试：在控制台显示当前电平
-  if (frameCount % 10 === 0) { // 每10帧记录一次以获得更频繁的更新
+  // Debugging: Display the current level on the console
+  if (frameCount % 10 === 0) { // Record once every 10 frames to obtain more frequent updates.
     console.log('Audio level:', level.toFixed(4), 'Is playing:', isPlaying, 'Is video:', isVideo, 'Has uploaded:', hasUploadedAudio, 'Using mic:', isUsingMic);
   }
 
-  // 只有在实际音频且正在播放时才动画
-  let numGroups = 0; // 默认：无动画
+  // Animation only occurs when actual audio is playing.
+  let numGroups = 0; // Default: No animation
   let isActive = (isUsingMic && micStarted) || isPlaying;
-  if (isActive && level > 0.001) { // 视频音频和麦克风的阈值降低到 0.001
+  if (isActive && level > 0.001) { // The threshold for video, audio, and microphone has been reduced to 0.001.
     numGroups = floor(map(level, 0, 1, 1, 8));
     console.log('Animating with', numGroups, 'groups, level:', level.toFixed(4));
   }
@@ -460,20 +460,20 @@ function draw() {
   }
 }
 
-// 在鼠标点击时切换音频/视频播放
+// Switch audio/video playback upon mouse click
 function mousePressed() {
-  // 检查点击是否在按钮上 - 如果是，不在这里处理
+  // Check whether the click is on the button - if so, do not process here
   if (event && event.target && event.target.tagName === 'BUTTON') {
-    return; // 让按钮的 onclick 处理器处理
+    return; // Have the button's onclick handler handle it
   }
 
-  // 只有在上传了文件且不在点击UI元素时才切换
+  // Switch only when a file has been uploaded and no UI element is being clicked
   if (hasUploadedAudio) {
     togglePlayPause();
   }
 }
 
-// 窗口大小调整
+// Window resizing
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   setup();
